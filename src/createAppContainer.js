@@ -72,6 +72,7 @@ export function _TESTING_ONLY_reset_container_count() {
 // We keep a global flag to catch errors during the state persistence hydrating scenario.
 // The innermost navigator who catches the error will dispatch a new init action.
 let _reactNavigationIsHydratingState = false;
+let linkingEvent;
 // Unfortunate to use global state here, but it seems necessesary for the time
 // being. There seems to be some problems with cascading componentDidCatch
 // handlers. Ideally the inner non-stateful navigator catches the error and
@@ -212,7 +213,7 @@ export default function createNavigationContainer(Component) {
         }
       }
       _statefulContainerCount++;
-      Linking.addEventListener('url', this._handleOpenURL);
+      linkingEvent = Linking.addEventListener('url', this._handleOpenURL);
 
       // Pull out anything that can impact state
       let parsedUrl = null;
@@ -328,7 +329,9 @@ export default function createNavigationContainer(Component) {
 
     componentWillUnmount() {
       this._isMounted = false;
-      Linking.removeEventListener('url', this._handleOpenURL);
+      if (linkingEvent !== null) {
+        linkingEvent.remove();
+      }
       this.subs && this.subs.remove();
 
       if (this._isStateful()) {
